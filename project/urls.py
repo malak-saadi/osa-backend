@@ -19,10 +19,18 @@ from django.contrib import admin
 from django.urls import path , include
 from django.conf import settings
 from django.conf.urls.static import static
+from patient.views import SleepSessionListCreateView
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path('api/auth/', include('accounts.urls')),
-        path('api/patient/',      include('patient.urls')),
+
+    # URL globale demandée: /api/sessions/
+    path('api/sessions/',  SleepSessionListCreateView.as_view(), name='global-sleep-session-list        '),
+
+    # On garde aussi l'ancienne pour éviter de casser le frontend s'il existe
+    path('api/patient/',      include('patient.u        rls')),
+
     path('api/statistique/',  include('statistique.urls'))
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
