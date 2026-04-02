@@ -1,3 +1,1 @@
-from django.db import models
-
-# Create your models here.
+# Patient model removed - using User(role=patient) and Profile instead

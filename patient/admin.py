@@ -1,3 +1,1 @@
-from django.contrib import admin
-
-# Register your models here.
+# Patient admin removed - use accounts User admin instead
