@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>OSA Monitor — Live Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f0f2f8; --card: #ffffff; --primary: #3b6ef8;
+      --success: #22c55e; --danger: #ef4444; --muted: #64748b; --border: #e2e8f0;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #1e293b; }
+    .layout { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px; background: var(--card); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; padding: 24px 0;
+      position: sticky; top: 0; height: 100vh;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+    .logo-icon { width: 36px; height: 36px; background: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; }
+    .logo-title { font-weight: 700; font-size: 14px; }
+    .logo-sub { font-size: 11px; color: var(--muted); }
+    .nav { display: flex; flex-direction: column; gap: 2px; padding: 0 8px; }
+    .nav-item {
+      padding: 10px 14px; border-radius: 8px; font-size: 14px;
+      color: var(--muted); cursor: pointer; display: block;
+      text-decoration: none; transition: all .2s;
+    }
+    .nav-item:hover { background: var(--bg); }
+    .nav-item.active { background: #eff3fe; color: var(--primary); font-weight: 600; }
+    .sidebar-bottom { margin-top: auto; padding: 16px; }
+    .export-btn {
+      width: 100%; padding: 10px; background: var(--primary); color: #fff;
+      border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+
+    /* Main */
+    .main { flex: 1; padding: 28px 32px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .topbar h2 { font-size: 22px; font-weight: 700; }
+    .topbar p { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .pid { color: var(--primary); font-weight: 600; }
+    .badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      background: #fee2e2; color: var(--danger);
+    }
+    .badge.connected { background: #dcfce7; color: #16a34a; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+    .dot.on { background: #16a34a; animation: pulse 1.4s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.5)} }
+
+    /* Cards */
+    .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .card { background: var(--card); border-radius: 16px; padding: 20px 22px; border: 1px solid var(--border); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .card-label { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .card-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .icon-hr   { background: #fee2e2; }
+    .icon-spo2 { background: #e0f7fa; }
+    .card-value { font-size: 44px; font-weight: 800; line-height: 1; }
+    .card-unit  { font-size: 15px; color: var(--muted); margin-left: 4px; }
+    .card-status { margin-top: 10px; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-block; }
+    .ok     { background: #dcfce7; color: #16a34a; }
+    .warn   { background: #fff7ed; color: #b45309; }
+    .danger { background: #fee2e2; color: var(--danger); }
+
+    /* Charts */
+    .charts { display: flex; flex-direction: column; gap: 20px; }
+    .chart-card { background: var(--card); border-radius: 16px; padding: 22px; border: 1px solid var(--border); }
+    .chart-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .chart-title { font-size: 15px; font-weight: 700; }
+    .chart-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .tag { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+    .tag-ppg  { background: #eff3fe; color: var(--primary); }
+    .tag-spo2 { background: #e0f7fa; color: #0891b2; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🫀</div>
+      <div>
+        <div class="logo-title">OSA Monitor</div>
+        <div class="logo-sub">Sleep Analytics v1.0</div>
+      </div>
+    </div>
+    <div class="nav">
+      <a href="dashboard.html"       class="nav-item active">📊 Dashboard</a>
+      <a href="sleep_history.html"   class="nav-item">📋 Sleep History</a>
+      <a href="patient_profile.html" class="nav-item">👤 Patient Profile</a>
+      <a href="settings.html"        class="nav-item">⚙️ Settings</a>
+    </div>
+    <div class="sidebar-bottom">
+      <button class="export-btn" onclick="exportCSV()">Export Data</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h2>OSA Analytics Dashboard</h2>
+        <p>Real-time data — Patient: <span class="pid">BRACELET-001</span></p>
+      </div>
+      <div class="badge" id="badge">
+        <span class="dot" id="dot"></span>
+        <span id="badgeText">DISCONNECTED</span>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-label">Heart Rate</span>
+          <div class="card-icon icon-hr">❤️</div>
+        </div>
+        <div>
+          <span class="card-value" id="hrVal">--</span>
+          <span class="card-unit">BPM</span>
+        </div>
+        <span class="card-status ok" id="hrStatus">Waiting...</span>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-label">SpO2 Level</span>
+          <div class="card-icon icon-spo2">💧</div>
+        </div>
+        <div>
+          <span class="card-value" id="spo2Val">--</span>
+          <span class="card-unit">%</span>
+        </div>
+        <span class="card-status ok" id="spo2Status">Waiting...</span>
+      </div>
+    </div>
+
+    <div class="charts">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Live PPG Waveform</div>
+            <div class="chart-sub">Raw photoplethysmography signal</div>
+          </div>
+          <span class="tag tag-ppg">PPG</span>
+        </div>
+        <canvas id="ppgChart" height="90"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">SpO2 Trend</div>
+            <div class="chart-sub">Blood oxygen saturation over time</div>
+          </div>
+          <span class="tag tag-spo2">SpO2 %</span>
+        </div>
+        <canvas id="spo2Chart" height="90"></canvas>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const DEVICE_ID = 'BRACELET-001';
+  const API_BASE  = 'http://127.0.0.1:8000';
+  const WS_URL    = `ws://127.0.0.1:8000/ws/sensor/${DEVICE_ID}/`;
+  const MAX_PTS   = 60;
+
+  function makeChart(id, label, color, yMin, yMax) {
+    return new Chart(document.getElementById(id).getContext('2d'), {
+      type: 'line',
+      data: { labels: [], datasets: [{ label, data: [], borderColor: color, backgroundColor: color + '18', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true }] },
+      options: {
+        animation: false, responsive: true,
+        scales: {
+          x: { ticks: { maxTicksLimit: 6, color: '#94a3b8', font: { size: 11 } }, grid: { color: '#f1f5f9' } },
+          y: { min: yMin, max: yMax, ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: '#f1f5f9' } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  const ppgChart  = makeChart('ppgChart',  'PPG',  '#3b6ef8', 0,    1024);
+  const spo2Chart = makeChart('spo2Chart', 'SpO2', '#06b6d4', 85,   101);
+
+  function push(chart, label, value) {
+    if (chart.data.labels.length >= MAX_PTS) {
+      chart.data.labels.shift();
+      chart.data.datasets[0].data.shift();
+    }
+    chart.data.labels.push(label);
+    chart.data.datasets[0].data.push(value);
+    chart.update('none');
+  }
+
+  function updateHR(v) {
+    document.getElementById('hrVal').textContent = v ? Math.round(v) : '--';
+    const s = document.getElementById('hrStatus');
+    if (!v) return;
+    if (v < 50 || v > 100) { s.className = 'card-status warn'; s.textContent = 'Abnormal HR'; }
+    else                   { s.className = 'card-status ok';   s.textContent = 'Normal range'; }
+  }
+
+  function updateSpO2(v) {
+    document.getElementById('spo2Val').textContent = v ? v.toFixed(1) : '--';
+    const s = document.getElementById('spo2Status');
+    if (!v) return;
+    if      (v < 90) { s.className = 'card-status danger'; s.textContent = 'Critical drop!'; }
+    else if (v < 95) { s.className = 'card-status warn';   s.textContent = 'Low SpO2'; }
+    else             { s.className = 'card-status ok';     s.textContent = 'Normal'; }
+  }
+
+  function setStatus(on) {
+    document.getElementById('badge').className       = 'badge' + (on ? ' connected' : '');
+    document.getElementById('dot').className         = 'dot'   + (on ? ' on' : '');
+    document.getElementById('badgeText').textContent = on ? 'LIVE CONNECTED' : 'DISCONNECTED';
+  }
+
+  let ws, retryTimer;
+  function connect() {
+    ws = new WebSocket(WS_URL);
+    ws.onopen    = () => { setStatus(true); clearTimeout(retryTimer); };
+    ws.onclose   = () => { setStatus(false); retryTimer = setTimeout(connect, 3000); };
+    ws.onerror   = ()  => ws.close();
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.type !== 'sensor_update') return;
+      const t = new Date(msg.timestamp).toLocaleTimeString();
+      push(ppgChart, t, msg.ppg_value);
+      if (msg.spo2 != null) push(spo2Chart, t, msg.spo2);
+      updateHR(msg.heart_rate);
+      updateSpO2(msg.spo2);
+    };
+  }
+
+  async function loadHistory() {
+    try {
+      const res  = await fetch(`${API_BASE}/api/statistique/readings/${DEVICE_ID}/latest/?limit=60`);
+      const data = await res.json();
+      data.forEach(r => {
+        const t = new Date(r.timestamp).toLocaleTimeString();
+        push(ppgChart, t, r.ppg_value);
+        if (r.spo2) push(spo2Chart, t, r.spo2);
+      });
+      if (data.length) {
+        updateHR(data.at(-1).heart_rate);
+        updateSpO2(data.at(-1).spo2);
+      }
+    } catch(e) { console.warn('No history:', e.message); }
+  }
+
+  function exportCSV() {
+    const rows = [['time','ppg','spo2']];
+    ppgChart.data.labels.forEach((t, i) => {
+      rows.push([t, ppgChart.data.datasets[0].data[i], spo2Chart.data.datasets[0].data[i] ?? '']);
+    });
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(new Blob([rows.map(r=>r.join(',')).join('\n')], {type:'text/csv'})),
+      download: `osa_${Date.now()}.csv`
+    });
+    a.click();
+  }
+
+  loadHistory();
+  connect();
+</script>
+</body>
+</html>

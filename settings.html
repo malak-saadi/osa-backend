@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>OSA Monitor — Settings</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f0f2f8; --card: #ffffff; --primary: #3b6ef8;
+      --muted: #64748b; --border: #e2e8f0; --danger: #ef4444;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #1e293b; }
+    .layout { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px; background: var(--card); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; padding: 24px 0;
+      position: fixed; top: 0; left: 0; height: 100vh; z-index: 10;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+    .logo-icon { width: 36px; height: 36px; background: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; }
+    .logo-title { font-weight: 700; font-size: 14px; }
+    .logo-sub   { font-size: 11px; color: var(--muted); }
+    .nav { display: flex; flex-direction: column; gap: 2px; padding: 0 8px; }
+    .nav-item {
+      padding: 10px 14px; border-radius: 8px; font-size: 14px;
+      color: var(--muted); cursor: pointer; display: block;
+      text-decoration: none; transition: all .2s;
+    }
+    .nav-item:hover  { background: var(--bg); }
+    .nav-item.active { background: #eff3fe; color: var(--primary); font-weight: 600; }
+
+    /* Main */
+    .main { flex: 1; margin-left: 220px; padding: 32px 40px; }
+    .page-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .page-sub   { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+
+    /* Settings layout */
+    .settings-layout { display: grid; grid-template-columns: 200px 1fr; gap: 24px; }
+
+    /* Left tabs */
+    .tabs { display: flex; flex-direction: column; gap: 4px; }
+    .tab {
+      padding: 10px 16px; border-radius: 10px; font-size: 14px;
+      color: var(--muted); cursor: pointer; display: flex;
+      align-items: center; gap: 10px; transition: all .2s;
+    }
+    .tab:hover  { background: var(--card); }
+    .tab.active { background: var(--card); color: var(--primary); font-weight: 600; border-left: 3px solid var(--primary); }
+
+    /* Panels */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* Section card */
+    .section-card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-title  { font-size: 15px; font-weight: 700; }
+    .section-sub    { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .section-body   { padding: 24px; }
+
+    /* Form */
+    .form-group  { margin-bottom: 18px; }
+    .form-label  { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 7px; display: block; }
+    .form-input  {
+      width: 100%; padding: 11px 14px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 14px; outline: none;
+      transition: border .2s; font-family: inherit; background: var(--card);
+    }
+    .form-input:focus { border-color: var(--primary); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .btn-primary {
+      padding: 11px 24px; background: var(--primary); color: #fff;
+      border: none; border-radius: 10px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: opacity .2s;
+    }
+    .btn-primary:hover { opacity: .85; }
+    .btn-danger {
+      padding: 11px 24px; background: var(--danger); color: #fff;
+      border: none; border-radius: 10px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: opacity .2s;
+    }
+    .btn-danger:hover { opacity: .85; }
+    .btn-outline {
+      padding: 11px 24px; background: none; color: var(--primary);
+      border: 1.5px solid var(--primary); border-radius: 10px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+
+    /* Toggle switch */
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #f1f5f9; }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-info h4 { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+    .toggle-info p  { font-size: 12px; color: var(--muted); }
+    .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; inset: 0; background: #cbd5e1;
+      border-radius: 24px; cursor: pointer; transition: .3s;
+    }
+    .slider::before {
+      content: ''; position: absolute; width: 18px; height: 18px;
+      left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .3s;
+    }
+    input:checked + .slider { background: var(--primary); }
+    input:checked + .slider::before { transform: translateX(20px); }
+
+    /* Device card */
+    .device-card {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; background: #f8fafc; border-radius: 12px;
+      border: 1px solid var(--border); margin-bottom: 10px;
+    }
+    .device-left  { display: flex; align-items: center; gap: 12px; }
+    .device-icon  { width: 42px; height: 42px; background: #eff3fe; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .device-name  { font-size: 14px; font-weight: 600; }
+    .device-id    { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .device-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-connected    { background: #dcfce7; color: #16a34a; }
+    .badge-disconnected { background: #f1f5f9; color: var(--muted); }
+
+    /* Danger zone */
+    .danger-zone { border: 1.5px solid #fecaca; border-radius: 16px; padding: 20px 24px; }
+    .danger-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #fef2f2; }
+    .danger-item:last-child { border-bottom: none; }
+    .danger-info h4 { font-size: 14px; font-weight: 600; color: #dc2626; }
+    .danger-info p  { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+    /* Confirm modal */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.45); z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--card); border-radius: 20px; width: 92%; max-width: 420px; padding: 28px; text-align: center; }
+    .modal-icon  { font-size: 44px; margin-bottom: 14px; }
+    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .modal-text  { font-size: 14px; color: var(--muted); margin-bottom: 22px; line-height: 1.6; }
+    .modal-btns  { display: flex; gap: 10px; justify-content: center; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 28px; right: 28px;
+      background: #1e293b; color: #fff; padding: 13px 22px;
+      border-radius: 12px; font-size: 13px; font-weight: 500;
+      opacity: 0; transition: opacity .3s; z-index: 300;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🫀</div>
+      <div>
+        <div class="logo-title">OSA Monitor</div>
+        <div class="logo-sub">Sleep Analytics v1.0</div>
+      </div>
+    </div>
+    <div class="nav">
+      <a href="dashboard.html"       class="nav-item">📊 Dashboard</a>
+      <a href="sleep_history.html"   class="nav-item">📋 Sleep History</a>
+      <a href="patient_profile.html" class="nav-item">👤 Patient Profile</a>
+      <a href="settings.html"        class="nav-item active">⚙️ Settings</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="page-title">⚙️ Settings</div>
+    <div class="page-sub">Manage your account, device, and preferences</div>
+
+    <div class="settings-layout">
+
+      <!-- Left tabs -->
+      <div class="tabs">
+        <div class="tab active" onclick="showTab('password', this)">🔒 Password</div>
+        <div class="tab"       onclick="showTab('notifications', this)">🔔 Notifications</div>
+        <div class="tab"       onclick="showTab('device', this)">📡 Device</div>
+        <div class="tab"       onclick="showTab('danger', this)">⚠️ Danger Zone</div>
+      </div>
+
+      <!-- Right panels -->
+      <div>
+
+        <!-- Password Panel -->
+        <div class="panel active" id="panel-password">
+          <div class="section-card">
+            <div class="section-header">
+              <div>
+                <div class="section-title">🔒 Change Password</div>
+                <div class="section-sub">Update your account password</div>
+              </div>
+            </div>
+            <div class="section-body">
+              <div class="form-group">
+                <label class="form-label">Current Password</label>
+                <input class="form-input" id="oldPass" type="password" placeholder="Enter current password"/>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">New Password</label>
+                  <input class="form-input" id="newPass" type="password" placeholder="Min 8 characters"/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Confirm Password</label>
+                  <input class="form-input" id="confirmPass" type="password" placeholder="Repeat new password"/>
+                </div>
+              </div>
+              <button class="btn-primary" onclick="changePassword()">Update Password</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notifications Panel -->
+        <div class="panel" id="panel-notifications">
+          <div class="section-card">
+            <div class="section-header">
+              <div>
+                <div class="section-title">🔔 Notification Preferences</div>
+                <div class="section-sub">Control what alerts you receive</div>
+              </div>
+            </div>
+            <div class="section-body">
+              <div class="toggle-row">
+                <div class="toggle-info">
+                  <h4>SpO2 Drop Alert</h4>
+                  <p>Notify when SpO2 falls below 90%</p>
+                </div>
+                <label class="toggle"><input type="checkbox" id="notifSpo2" checked/><span class="slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-info">
+                  <h4>Abnormal Heart Rate</h4>
+                  <p>Notify when HR is outside normal range</p>
+                </div>
+                <label class="toggle"><input type="checkbox" id="notifHr" checked/><span class="slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-info">
+                  <h4>Session Summary</h4>
+                  <p>Receive summary after each sleep session</p>
+                </div>
+                <label class="toggle"><input type="checkbox" id="notifSession"/><span class="slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-info">
+                  <h4>Apnea Event Detected</h4>
+                  <p>Alert when apnea event is detected</p>
+                </div>
+                <label class="toggle"><input type="checkbox" id="notifApnea" checked/><span class="slider"></span></label>
+              </div>
+              <br>
+              <button class="btn-primary" onclick="saveNotifications()">Save Preferences</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Device Panel -->
+        <div class="panel" id="panel-device">
+          <div class="section-card">
+            <div class="section-header">
+              <div>
+                <div class="section-title">📡 Connected Devices</div>
+                <div class="section-sub">Manage your bracelets</div>
+              </div>
+            </div>
+            <div class="section-body">
+              <div id="deviceList">
+                <div style="color:var(--muted);font-size:14px">Loading devices...</div>
+              </div>
+              <br>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Register New Device</label>
+                  <input class="form-input" id="newDeviceId" type="text" placeholder="e.g. BRACELET-002"/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Patient Name</label>
+                  <input class="form-input" id="newDeviceName" type="text" placeholder="e.g. John Doe"/>
+                </div>
+              </div>
+              <button class="btn-primary" onclick="registerDevice()">➕ Register Device</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Danger Zone Panel -->
+        <div class="panel" id="panel-danger">
+          <div class="danger-zone">
+            <div class="danger-item">
+              <div class="danger-info">
+                <h4>Logout</h4>
+                <p>Sign out from your account</p>
+              </div>
+              <button class="btn-outline" onclick="logout()">Logout</button>
+            </div>
+            <div class="danger-item">
+              <div class="danger-info">
+                <h4>Delete Account</h4>
+                <p>Permanently delete your account and all data</p>
+              </div>
+              <button class="btn-danger" onclick="openDeleteModal()">Delete Account</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title">Delete Account?</div>
+    <div class="modal-text">This action is <strong>permanent</strong> and cannot be undone. All your data, sessions, and readings will be deleted forever.</div>
+    <div class="modal-btns">
+      <button class="btn-outline" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn-danger"  onclick="deleteAccount()">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const API_BASE = 'http://127.0.0.1:8000';
+  const TOKEN    = localStorage.getItem('access_token');
+
+  // ── Tab switching ─────────────────────────────────────────
+  function showTab(name, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+    if (name === 'device') loadDevices();
+  }
+
+  // ── Change Password ───────────────────────────────────────
+  async function changePassword() {
+    const old_password = document.getElementById('oldPass').value;
+    const new_password = document.getElementById('newPass').value;
+    const confirm      = document.getElementById('confirmPass').value;
+
+    if (!old_password || !new_password) { showToast('❌ Fill all fields'); return; }
+    if (new_password !== confirm)        { showToast('❌ Passwords do not match'); return; }
+    if (new_password.length < 8)         { showToast('❌ Min 8 characters'); return; }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/change-password/`, {
+        method : 'POST',
+        headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
+        body   : JSON.stringify({ old_password, new_password }),
+      });
+      if (res.ok) {
+        showToast('✅ Password updated successfully!');
+        document.getElementById('oldPass').value     = '';
+        document.getElementById('newPass').value     = '';
+        document.getElementById('confirmPass').value = '';
+      } else {
+        const err = await res.json();
+        showToast('❌ ' + (err.old_password?.[0] || err.detail || 'Error'));
+      }
+    } catch(e) { showToast('❌ Connection error'); }
+  }
+
+  // ── Save Notifications ────────────────────────────────────
+  function saveNotifications() {
+    const prefs = {
+      spo2   : document.getElementById('notifSpo2').checked,
+      hr     : document.getElementById('notifHr').checked,
+      session: document.getElementById('notifSession').checked,
+      apnea  : document.getElementById('notifApnea').checked,
+    };
+    localStorage.setItem('notif_prefs', JSON.stringify(prefs));
+    showToast('✅ Preferences saved!');
+  }
+
+  function loadNotificationPrefs() {
+    const prefs = JSON.parse(localStorage.getItem('notif_prefs') || '{}');
+    if (prefs.spo2    !== undefined) document.getElementById('notifSpo2').checked    = prefs.spo2;
+    if (prefs.hr      !== undefined) document.getElementById('notifHr').checked      = prefs.hr;
+    if (prefs.session !== undefined) document.getElementById('notifSession').checked = prefs.session;
+    if (prefs.apnea   !== undefined) document.getElementById('notifApnea').checked   = prefs.apnea;
+  }
+
+  // ── Load Devices ──────────────────────────────────────────
+  async function loadDevices() {
+    try {
+      const res  = await fetch(`${API_BASE}/api/statistique/devices/register/`, {
+        headers: { 'Authorization': `Bearer ${TOKEN}` }
+      });
+      // We use a simple GET on the ingest to check connectivity
+      // Show BRACELET-001 as default connected device
+      document.getElementById('deviceList').innerHTML = `
+        <div class="device-card">
+          <div class="device-left">
+            <div class="device-icon">⌚</div>
+            <div>
+              <div class="device-name">OSA Bracelet</div>
+              <div class="device-id">ID: BRACELET-001</div>
+            </div>
+          </div>
+          <span class="device-badge badge-connected">Connected</span>
+        </div>`;
+    } catch(e) {}
+  }
+
+  // ── Register Device ───────────────────────────────────────
+  async function registerDevice() {
+    const device_id   = document.getElementById('newDeviceId').value.trim();
+    const patient_name = document.getElementById('newDeviceName').value.trim();
+    if (!device_id) { showToast('❌ Enter a device ID'); return; }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/statistique/devices/register/`, {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({ device_id, patient_name }),
+      });
+      if (res.ok) {
+        showToast('✅ Device registered!');
+        document.getElementById('newDeviceId').value   = '';
+        document.getElementById('newDeviceName').value = '';
+        loadDevices();
+      }
+    } catch(e) { showToast('❌ Error registering device'); }
+  }
+
+  // ── Logout ────────────────────────────────────────────────
+  async function logout() {
+    const refresh = localStorage.getItem('refresh_token');
+    try {
+      await fetch(`${API_BASE}/api/auth/logout/`, {
+        method : 'POST',
+        headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
+        body   : JSON.stringify({ refresh }),
+      });
+    } catch(e) {}
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    showToast('👋 Logged out');
+    setTimeout(() => window.location.href = 'dashboard.html', 1500);
+  }
+
+  // ── Delete Account ────────────────────────────────────────
+  function openDeleteModal()  { document.getElementById('deleteModal').classList.add('open'); }
+  function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('open'); }
+
+  async function deleteAccount() {
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/delete/`, {
+        method : 'DELETE',
+        headers: { 'Authorization': `Bearer ${TOKEN}` },
+      });
+      if (res.ok) {
+        localStorage.clear();
+        showToast('Account deleted');
+        setTimeout(() => window.location.href = 'dashboard.html', 1500);
+      }
+    } catch(e) { showToast('❌ Error'); }
+  }
+
+  // ── Toast ─────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  loadNotificationPrefs();
+</script>
+</body>
+</html>

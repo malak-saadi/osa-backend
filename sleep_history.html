@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>OSA Monitor — Sleep History</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f0f2f8; --card: #ffffff; --primary: #3b6ef8;
+      --danger: #ef4444; --muted: #64748b; --border: #e2e8f0;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #1e293b; }
+    .layout { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 220px; background: var(--card); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; padding: 24px 0;
+      position: sticky; top: 0; height: 100vh;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+    .logo-icon { width: 36px; height: 36px; background: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; }
+    .logo-title { font-weight: 700; font-size: 14px; }
+    .logo-sub   { font-size: 11px; color: var(--muted); }
+    .nav { display: flex; flex-direction: column; gap: 2px; padding: 0 8px; }
+    .nav-item { padding: 10px 14px; border-radius: 8px; font-size: 14px; color: var(--muted); cursor: pointer; text-decoration: none; display: block; }
+    .nav-item:hover { background: var(--bg); }
+    .nav-item.active { background: #eff3fe; color: var(--primary); font-weight: 600; }
+
+    /* ── Main ── */
+    .main { flex: 1; padding: 28px 32px; overflow-y: auto; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .topbar h2 { font-size: 22px; font-weight: 700; }
+    .topbar p  { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Filter Buttons ── */
+    .filters { display: flex; gap: 10px; margin-bottom: 24px; }
+    .filter-btn {
+      padding: 8px 20px; border-radius: 20px; border: 1.5px solid var(--border);
+      background: var(--card); font-size: 13px; font-weight: 600;
+      color: var(--muted); cursor: pointer; transition: all .2s;
+    }
+    .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .filter-btn:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+
+    /* ── Stats Cards ── */
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+    .stat-card { background: var(--card); border-radius: 16px; padding: 18px 20px; border: 1px solid var(--border); }
+    .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 8px; }
+    .stat-value { font-size: 32px; font-weight: 800; line-height: 1; }
+    .stat-unit  { font-size: 13px; color: var(--muted); margin-left: 4px; }
+    .stat-sub   { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+    /* ── Sessions Table ── */
+    .table-card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 28px; }
+    .table-header { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .table-title  { font-size: 15px; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 12px 22px; text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); background: #f8fafc; }
+    td { padding: 14px 22px; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fafc; cursor: pointer; }
+    .badge-ok     { background: #dcfce7; color: #16a34a; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-warn   { background: #fff7ed; color: #b45309; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-danger { background: #fee2e2; color: var(--danger); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-none   { background: #f1f5f9; color: var(--muted); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .view-btn { padding: 5px 14px; border-radius: 8px; border: 1.5px solid var(--primary); color: var(--primary); font-size: 12px; font-weight: 600; cursor: pointer; background: none; transition: all .2s; }
+    .view-btn:hover { background: var(--primary); color: #fff; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.45); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--card); border-radius: 20px;
+      width: 90%; max-width: 900px; max-height: 90vh;
+      overflow-y: auto; padding: 28px;
+    }
+    .modal-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    .modal-title { font-size: 18px; font-weight: 700; }
+    .modal-sub   { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .close-btn   { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--muted); }
+    .modal-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+    .ms-card { background: #f8fafc; border-radius: 12px; padding: 14px; }
+    .ms-label { font-size: 11px; color: var(--muted); font-weight: 500; margin-bottom: 4px; }
+    .ms-value { font-size: 22px; font-weight: 800; }
+    .ms-unit  { font-size: 12px; color: var(--muted); }
+    .modal-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab-btn { padding: 7px 18px; border-radius: 20px; border: 1.5px solid var(--border); background: none; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; }
+    .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🫀</div>
+      <div>
+        <div class="logo-title">OSA Monitor</div>
+        <div class="logo-sub">Sleep Analytics v1.0</div>
+      </div>
+    </div>
+    <div class="nav">
+      <a href="dashboard.html"      class="nav-item">📊 Dashboard</a>
+      <a href="sleep_history.html"  class="nav-item active">📋 Sleep History</a>
+      <a href="patient_profile.html"class="nav-item">👤 Patient Profile</a>
+      <a href="settings.html"       class="nav-item">⚙️ Settings</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h2>Sleep History</h2>
+        <p>All sessions for device: <strong>BRACELET-001</strong></p>
+      </div>
+    </div>
+
+    <!-- Filter Buttons -->
+    <div class="filters">
+      <button class="filter-btn active" onclick="filterSessions('all',   this)">All Sessions</button>
+      <button class="filter-btn"        onclick="filterSessions('week',  this)">This Week</button>
+      <button class="filter-btn"        onclick="filterSessions('month', this)">This Month</button>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Total Sessions</div>
+        <div><span class="stat-value" id="totalSessions">--</span></div>
+        <div class="stat-sub">All recorded sessions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg SpO2</div>
+        <div><span class="stat-value" id="avgSpo2">--</span><span class="stat-unit">%</span></div>
+        <div class="stat-sub">Across all sessions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg PPG</div>
+        <div><span class="stat-value" id="avgPpg">--</span></div>
+        <div class="stat-sub">Average PPG amplitude</div>
+      </div>
+    </div>
+
+    <!-- Sessions Table -->
+    <div class="table-card">
+      <div class="table-header">
+        <span class="table-title">Sessions</span>
+        <span style="font-size:12px;color:var(--muted)" id="sessionCount">Loading...</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Duration</th>
+            <th>Avg SpO2</th>
+            <th>Avg PPG</th>
+            <th>Min SpO2</th>
+            <th>AHI Score</th>
+            <th>Result</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="sessionsTable">
+          <tr><td colspan="9" class="loading">Loading sessions...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Modal: Session Detail -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-top">
+      <div>
+        <div class="modal-title" id="modalTitle">Session Detail</div>
+        <div class="modal-sub"  id="modalSub"></div>
+      </div>
+      <button class="close-btn" onclick="closeModalDirect()">✕</button>
+    </div>
+
+    <!-- Mini stats inside modal -->
+    <div class="modal-stats">
+      <div class="ms-card">
+        <div class="ms-label">Avg SpO2</div>
+        <div><span class="ms-value" id="mSpo2">--</span><span class="ms-unit">%</span></div>
+      </div>
+      <div class="ms-card">
+        <div class="ms-label">Avg PPG</div>
+        <div><span class="ms-value" id="mPpg">--</span></div>
+      </div>
+      <div class="ms-card">
+        <div class="ms-label">Avg HR</div>
+        <div><span class="ms-value" id="mHr">--</span><span class="ms-unit">bpm</span></div>
+      </div>
+      <div class="ms-card">
+        <div class="ms-label">AHI Score</div>
+        <div><span class="ms-value" id="mAhi">--</span></div>
+      </div>
+    </div>
+
+    <!-- Tabs: PPG / SpO2 -->
+    <div class="modal-tabs">
+      <button class="tab-btn active" onclick="showTab('ppg', this)">PPG Waveform</button>
+      <button class="tab-btn"        onclick="showTab('spo2', this)">SpO2 Curve</button>
+    </div>
+
+    <canvas id="modalChart" height="80"></canvas>
+  </div>
+</div>
+
+<script>
+  const DEVICE_ID = 'BRACELET-001';
+  const API_BASE  = 'http://127.0.0.1:8000';
+
+  let allSessions   = [];
+  let modalChart    = null;
+  let currentData   = { ppg: [], spo2: [], labels: [] };
+  let activeTab     = 'ppg';
+
+  // ── Load all sessions ──────────────────────────────────
+  async function loadSessions() {
+    try {
+      const res  = await fetch(`${API_BASE}/api/statistique/sessions/${DEVICE_ID}/`);
+      allSessions = await res.json();
+      renderTable(allSessions);
+      updateSummary(allSessions);
+    } catch(e) {
+      document.getElementById('sessionsTable').innerHTML =
+        '<tr><td colspan="9" class="loading">Could not load sessions.</td></tr>';
+    }
+  }
+
+  // ── Render table ───────────────────────────────────────
+  function renderTable(sessions) {
+    const tbody = document.getElementById('sessionsTable');
+    document.getElementById('sessionCount').textContent = `${sessions.length} session(s)`;
+
+    if (!sessions.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="loading">No sessions found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = sessions.map((s, i) => {
+      const date     = new Date(s.started_at).toLocaleDateString();
+      const time     = new Date(s.started_at).toLocaleTimeString();
+      const duration = s.duration_min ? `${s.duration_min} min` : '—';
+      const avgSpo2  = s.avg_spo2  ? `${s.avg_spo2.toFixed(1)}%`  : '—';
+      const avgPpg   = s.avg_ppg   ? s.avg_ppg.toFixed(1)          : '—';
+      const minSpo2  = s.min_spo2  ? `${s.min_spo2.toFixed(1)}%`  : '—';
+      const ahi      = s.ahi_score !== null ? s.ahi_score.toFixed(1) : '—';
+
+      let resultBadge;
+      if      (s.apnea_detected === true)  resultBadge = '<span class="badge-danger">Apnea</span>';
+      else if (s.apnea_detected === false)  resultBadge = '<span class="badge-ok">Normal</span>';
+      else                                  resultBadge = '<span class="badge-none">Pending</span>';
+
+      return `<tr>
+        <td>${sessions.length - i}</td>
+        <td>${date}<br><span style="color:var(--muted);font-size:11px">${time}</span></td>
+        <td>${duration}</td>
+        <td>${avgSpo2}</td>
+        <td>${avgPpg}</td>
+        <td>${minSpo2}</td>
+        <td>${ahi}</td>
+        <td>${resultBadge}</td>
+        <td><button class="view-btn" onclick="openSession(${s.id})">View</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ── Summary stats ──────────────────────────────────────
+  function updateSummary(sessions) {
+    const completed = sessions.filter(s => s.ended_at);
+    document.getElementById('totalSessions').textContent = sessions.length;
+
+    const spo2List = completed.filter(s => s.avg_spo2).map(s => s.avg_spo2);
+    const ppgList  = completed.filter(s => s.avg_ppg ).map(s => s.avg_ppg);
+
+    document.getElementById('avgSpo2').textContent =
+      spo2List.length ? (spo2List.reduce((a,b)=>a+b,0)/spo2List.length).toFixed(1) : '--';
+    document.getElementById('avgPpg').textContent  =
+      ppgList.length  ? (ppgList.reduce((a,b)=>a+b,0)/ppgList.length).toFixed(0)   : '--';
+  }
+
+  // ── Filter buttons ─────────────────────────────────────
+  function filterSessions(range, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const now   = new Date();
+    let filtered = allSessions;
+
+    if (range === 'week') {
+      const weekAgo = new Date(now - 7 * 86400000);
+      filtered = allSessions.filter(s => new Date(s.started_at) >= weekAgo);
+    } else if (range === 'month') {
+      const monthAgo = new Date(now - 30 * 86400000);
+      filtered = allSessions.filter(s => new Date(s.started_at) >= monthAgo);
+    }
+
+    renderTable(filtered);
+    updateSummary(filtered);
+  }
+
+  // ── Open session modal ─────────────────────────────────
+  async function openSession(sessionId) {
+    document.getElementById('modalOverlay').classList.add('open');
+    document.getElementById('modalTitle').textContent = `Session #${sessionId}`;
+    document.getElementById('modalSub').textContent   = 'Loading data...';
+
+    try {
+      const res  = await fetch(`${API_BASE}/api/statistique/sessions/detail/${sessionId}/`);
+      const data = await res.json();
+      const s    = data.session;
+      const readings = data.readings;
+
+      document.getElementById('modalSub').textContent =
+        `${new Date(s.started_at).toLocaleString()} — ${s.ended_at ? new Date(s.ended_at).toLocaleString() : 'ongoing'}`;
+
+      document.getElementById('mSpo2').textContent = s.avg_spo2 ? s.avg_spo2.toFixed(1) : '--';
+      document.getElementById('mPpg').textContent  = s.avg_ppg  ? s.avg_ppg.toFixed(0)  : '--';
+      document.getElementById('mHr').textContent   = '--';
+      document.getElementById('mAhi').textContent  = s.ahi_score !== null ? s.ahi_score.toFixed(1) : '--';
+
+      // Store data for tabs
+      currentData.labels = readings.map(r => new Date(r.timestamp).toLocaleTimeString());
+      currentData.ppg    = readings.map(r => r.ppg_value);
+      currentData.spo2   = readings.map(r => r.spo2);
+
+      showTab(activeTab, document.querySelector('.tab-btn.active'));
+    } catch(e) {
+      document.getElementById('modalSub').textContent = 'Error loading session data.';
+    }
+  }
+
+  // ── Tabs: PPG / SpO2 ───────────────────────────────────
+  function showTab(tab, btn) {
+    activeTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    const isPPG  = tab === 'ppg';
+    const color  = isППГ ? '#3b6ef8' : '#06b6d4';
+    const vals   = isPPG ? currentData.ppg : currentData.spo2;
+    const yMin   = isPPG ? 0   : 85;
+    const yMax   = isPPG ? 1024: 101;
+    const label  = isPPG ? 'PPG' : 'SpO2 %';
+
+    if (modalChart) modalChart.destroy();
+    modalChart = new Chart(
+      document.getElementById('modalChart').getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: currentData.labels,
+          datasets: [{
+            label, data: vals,
+            borderColor: color, backgroundColor: color + '18',
+            borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true
+          }]
+        },
+        options: {
+          animation: false, responsive: true,
+          scales: {
+            x: { ticks: { maxTicksLimit: 8, color: '#94a3b8', font:{size:10} }, grid:{color:'#f1f5f9'} },
+            y: { min: yMin, max: yMax, ticks:{color:'#94a3b8',font:{size:10}}, grid:{color:'#f1f5f9'} }
+          },
+          plugins: { legend: { display: false } }
+        }
+      }
+    );
+  }
+
+  // ── Close modal ────────────────────────────────────────
+  function closeModal(e) {
+    if (e.target === document.getElementById('modalOverlay')) closeModalDirect();
+  }
+  function closeModalDirect() {
+    document.getElementById('modalOverlay').classList.remove('open');
+    if (modalChart) { modalChart.destroy(); modalChart = null; }
+    currentData = { ppg: [], spo2: [], labels: [] };
+  }
+
+  loadSessions();
+</script>
+</body>
+</html>
