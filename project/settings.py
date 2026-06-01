@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'accounts',
     'patient',
      'statistique',
+    'apnea_analysis',
 ]
 
 MIDDLEWARE = [
