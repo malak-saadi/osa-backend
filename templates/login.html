@@ -197,7 +197,7 @@
           <i class="ti ti-eye" id="eyeIcon"></i>
         </button>
       </div>
-      <a class="forgot-link" href="forgot_password.html">Forgot password?</a>
+      <a class="forgot-link" href="#">Forgot password?</a>
     </div>
 
     <button class="login-btn" id="loginBtn" onclick="handleLogin()">
@@ -207,7 +207,7 @@
 
     <hr class="divider"/>
     <p class="register-row">
-      Don't have an account? <a href="register.html">Register</a>
+      Don't have an account? <a href="#">Register</a>
     </p>
 
   </div>
@@ -278,7 +278,7 @@
         localStorage.setItem('user',          JSON.stringify(data.user));
 
         // Redirect to dashboard
-        window.location.href = 'dashboard.html';
+        window.location.href = '/dashboard/';
       } else {
         // Parse DRF error shapes
         const msg = data?.detail

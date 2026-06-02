@@ -1,0 +1,689 @@
+<!DOCTYPE html><html lang="en" style=""><head><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" class="">
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>OSA Monitor - Analytics Dashboard</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Font: Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            brand: '#1d61e1',
+            surface: '#f8f9ff',
+            'surface-dim': '#cbdbf5',
+            'surface-container-low': '#eff4ff',
+            'surface-container-lowest': '#ffffff',
+          },
+          borderRadius: {
+            'card': '8px',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-layout">
+    body {
+      background-color: #f8f9ff;
+      color: #1e293b;
+    }
+    .sidebar-active {
+      background-color: #eff4ff;
+      color: #1d61e1;
+      border-right: 3px solid #1d61e1;
+    }
+    .chart-container {
+      position: relative;
+      height: 250px;
+    }
+  </style>
+</head>
+<body class="flex min-h-screen">
+<!-- BEGIN: Sidebar -->
+<aside class="w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0" data-purpose="main-navigation">
+<div class="p-6 flex items-center gap-3">
+<div class="w-10 h-10 bg-brand rounded-lg flex items-center justify-center">
+<svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div>
+<h1 class="font-bold text-gray-900 leading-tight">OSA Monitor</h1>
+<p class="text-xs text-gray-500">Sleep Analytics v2.4</p>
+</div>
+</div>
+<nav class="flex-1 mt-4 px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-brand bg-blue-50 rounded-card font-semibold" href="#">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+        Dashboard
+      </a>
+
+<a class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 transition-colors" href="#">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+        Sleep History
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 transition-colors" href="#">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+        Patient Profile
+      </a>
+<div class="pt-10">
+<a class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 transition-colors" href="#">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+          Settings
+        </a>
+</div>
+</nav>
+
+</aside>
+<!-- END: Sidebar -->
+<!-- BEGIN: Main Content -->
+<main class="flex-1 overflow-y-auto">
+<!-- BEGIN: Top Bar -->
+<header class="bg-white border-b border-gray-100 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
+<div class="flex items-center gap-3">
+<span class="text-sm font-semibold text-gray-700">Patient Monitoring</span>
+<span class="bg-green-100 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Live Connected</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative">
+<input class="bg-gray-100 border-none rounded-card pl-10 pr-4 py-2 text-sm w-64 focus:ring-2 focus:ring-brand" placeholder="Search clinical logs..." type="text">
+<svg class="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+
+<img alt="User" class="w-8 h-8 rounded-full border border-brand" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUvZG8X1vsfTJ5uER8t8x6z4G4MwZuzhfNtM2RYqBhQUPGKGJFXr-KQKP5rO9BxdIX1kAWpmiZC4jifZ0gS6Z0yM_HXT58Xv6YIGPR1blKu9ha3NYIvCrlBC0qWPe6mJ0frO6gz26e-dy368KUXEFhG771rEV4uTPON7vU8vvfyRH95jepntc42RPEsKSeec3rcAzV5C20NAxnHNwZvRUyov6YHwO5yLZQQhbRnqp_kCNFyQ93w6nTWqCUgdoNSNC8pGQcs0arzLDo">
+</div>
+</header>
+<!-- END: Top Bar -->
+<div class="p-8 space-y-6">
+<!-- BEGIN: Header Section -->
+<section>
+<h2 class="text-2xl font-bold text-gray-900">OSA Analytics Dashboard</h2>
+<p class="text-sm text-gray-500">Real-time physiological data for Patient ID: #8829-X</p>
+</section>
+<!-- END: Header Section -->
+<!-- BEGIN: Metrics Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-purpose="vital-metrics">
+<!-- PPG Level -->
+<div class="bg-white p-5 rounded-card shadow-sm border border-gray-100 flex flex-col justify-between h-32">
+<div class="flex justify-between items-start">
+<span class="text-gray-500 text-sm font-medium uppercase">PPG Level</span>
+<div class="text-brand">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+</div>
+<div class="mt-2">
+<span id="ppg" class="text-3xl font-bold">--</span>
+<span class="text-gray-400 text-sm ml-1">raw</span>
+<div class="flex items-center text-green-500 text-[10px] font-bold mt-1">
+<svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 11.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L10 10.586 13.586 7H12z" fill-rule="evenodd"></path></svg>
+<span class="">2% vs average</span>
+</div>
+</div>
+</div>
+<!-- SpO2 Level -->
+<div class="bg-white p-5 rounded-card shadow-sm border border-gray-100 flex flex-col justify-between h-32">
+<div class="flex justify-between items-start">
+<span class="text-gray-500 text-sm font-medium uppercase">SpO2 Level</span>
+<div class="text-blue-400">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+</div>
+<div class="mt-2">
+<span id="spo2" class="text-3xl font-bold">--</span>
+<span class="text-gray-400 text-sm ml-1">%</span>
+<div class="flex items-center text-red-500 text-[10px] font-bold mt-1">
+<svg class="h-3 w-3 rotate-180" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 11.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L10 10.586 13.586 7H12z" fill-rule="evenodd"></path></svg>
+<span class="">1% drop detected</span>
+</div>
+</div>
+</div>
+<!-- Respiration -->
+<div class="bg-white p-5 rounded-card shadow-sm border border-gray-100 flex flex-col justify-between h-32">
+<div class="flex justify-between items-start">
+<span class="text-gray-500 text-sm font-medium uppercase">Heart Rate</span>
+<div class="text-red-500">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+</div>
+<div class="mt-2">
+<span id="bpm" class="text-3xl font-bold">--</span>
+<span class="text-gray-400 text-sm ml-1">BPM</span>
+<div class="flex items-center text-green-500 text-[10px] font-bold mt-1">
+<svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 11.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L10 10.586 13.586 7H12z" fill-rule="evenodd"></path></svg>
+<span class="">2% vs average</span>
+</div>
+</div>
+</div>
+<!-- HRV -->
+<div class="bg-white p-5 rounded-card shadow-sm border border-gray-100 flex flex-col justify-between h-32"><div class="flex justify-between items-start"><span class="text-gray-500 text-sm font-medium uppercase">GSR</span><div class="text-orange-400"><span class="material-symbols-outlined">humidity_low</span></div></div><div class="mt-2"><span id="gsr" class="text-3xl font-bold">--</span><span class="text-gray-400 text-sm ml-1">raw</span><div class="flex items-center text-green-500 text-[10px] font-bold mt-1"><svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fill-rule="evenodd"></path></svg><span class="">Normal</span></div></div></div>
+</section>
+<!-- END: Metrics Grid -->
+ <!-- BEGIN: HRV Metrics Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+  <div class="bg-white p-5 rounded-card shadow-sm border border-gray-100">
+    <p class="text-gray-500 text-sm font-medium uppercase">HRV SampEn</p>
+    <span id="hrv_sampen" class="text-2xl font-bold">--</span>
+  </div>
+
+  <div class="bg-white p-5 rounded-card shadow-sm border border-gray-100">
+    <p class="text-gray-500 text-sm font-medium uppercase">HRV RMSSD</p>
+    <span id="hrv_rmssd" class="text-2xl font-bold">--</span>
+  </div>
+
+  <div class="bg-white p-5 rounded-card shadow-sm border border-gray-100">
+    <p class="text-gray-500 text-sm font-medium uppercase">HRV SDNN</p>
+    <span id="hrv_sdnn" class="text-2xl font-bold">--</span>
+  </div>
+
+  <div class="bg-white p-5 rounded-card shadow-sm border border-gray-100">
+    <p class="text-gray-500 text-sm font-medium uppercase">PPG Mean</p>
+    <span id="ppg_mean" class="text-2xl font-bold">--</span>
+  </div>
+
+  <div class="bg-white p-5 rounded-card shadow-sm border border-gray-100">
+    <p class="text-gray-500 text-sm font-medium uppercase">HR Mean</p>
+    <span id="hr_mean" class="text-2xl font-bold">--</span>
+  </div>
+
+  <div class="bg-white p-5 rounded-card shadow-sm border border-gray-100">
+    <p class="text-gray-500 text-sm font-medium uppercase">HR Std</p>
+    <span id="hr_std" class="text-2xl font-bold">--</span>
+  </div>
+
+  <div class="bg-white p-5 rounded-card shadow-sm border border-gray-100">
+    <p class="text-gray-500 text-sm font-medium uppercase">HR Max</p>
+    <span id="hr_max" class="text-2xl font-bold">--</span>
+  </div>
+
+  <div class="bg-white p-5 rounded-card shadow-sm border border-gray-100">
+    <p class="text-gray-500 text-sm font-medium uppercase">HR Min</p>
+    <span id="hr_min" class="text-2xl font-bold">--</span>
+  </div>
+</section>
+<!-- END: HRV Metrics Grid -->
+
+<!-- BEGIN: AI Analysis Buttons -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <button onclick="openSpo2AI()" class="bg-blue-600 text-white p-4 rounded-card font-bold hover:bg-blue-700 transition-colors">
+    Open AI SpO₂ Analysis
+  </button>
+  <button onclick="openPpgAI()" class="bg-indigo-600 text-white p-4 rounded-card font-bold hover:bg-indigo-700 transition-colors">
+    Open AI PPG Analysis
+  </button>
+</section>
+
+<!-- BEGIN: AI Modals -->
+<div id="spo2Modal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4">
+  <div class="bg-white rounded-card p-6 max-w-xl w-full shadow-xl">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold text-gray-900">AI SpO₂ Analysis</h3>
+      <button onclick="closeModal('spo2Modal')" class="text-gray-500 hover:text-gray-900 text-2xl">&times;</button>
+    </div>
+    <pre id="aiSpo2Content" class="whitespace-pre-wrap text-sm text-gray-700 bg-gray-50 rounded-card p-4">Waiting for data...</pre>
+  </div>
+</div>
+
+<div id="ppgModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4">
+  <div class="bg-white rounded-card p-6 max-w-xl w-full shadow-xl">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold text-gray-900">AI PPG Analysis</h3>
+      <button onclick="closeModal('ppgModal')" class="text-gray-500 hover:text-gray-900 text-2xl">&times;</button>
+    </div>
+    <pre id="aiPpgContent" class="whitespace-pre-wrap text-sm text-gray-700 bg-gray-50 rounded-card p-4">Waiting for data...</pre>
+  </div>
+</div>
+<!-- END: AI Modals -->
+<!-- BEGIN: Chart & Risk Level Section -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Real-time PPG/SpO2 Graph -->
+<div class="lg:col-span-2 bg-white p-6 rounded-card shadow-sm border border-gray-100" data-purpose="signal-visualization">
+<div class="flex justify-between items-center mb-6">
+<div>
+<h3 class="font-bold text-gray-900">Real-time PPG &amp; SpO₂ Signals</h3>
+<p class="text-xs text-gray-400">Live Lead II pulsatile visualization</p>
+</div>
+<div class="flex gap-2">
+<span class="bg-gray-100 text-[10px] px-2 py-1 rounded font-bold text-gray-600">10mm/mV</span>
+<span class="bg-gray-100 text-[10px] px-2 py-1 rounded font-bold text-gray-600">25mm/s</span>
+</div>
+</div>
+<div class="chart-container" id="signal-canvas-wrapper">
+<canvas class="w-full h-full" id="ppgChart" width="583" height="250"></canvas>
+</div>
+<div class="flex justify-between mt-4 text-[10px] font-bold text-gray-400">
+<span class="">-5S</span>
+<span class="">-4S</span>
+<span class="">-3S</span>
+<span class="">-2S</span>
+<span class="">-1S</span>
+<span class="text-brand">NOW</span>
+</div>
+</div>
+<!-- OSA Risk Level Card -->
+<div class="bg-white p-6 rounded-card shadow-sm border border-gray-100 flex flex-col items-center justify-between text-center" data-purpose="risk-assessment">
+<div>
+<h3 class="font-bold text-gray-900">OSA Risk Level</h3>
+<p class="text-xs text-gray-400">AI-calculated apnea probability</p>
+</div>
+<div class="relative w-48 h-48 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle cx="96" cy="96" fill="none" r="80" stroke="#f1f5f9" stroke-width="14"></circle>
+<circle cx="96" cy="96" fill="none" r="80" stroke="#1d61e1" stroke-dasharray="502" stroke-dashoffset="380" stroke-linecap="round" stroke-width="14"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span id="riskPercent" class="text-4xl font-black text-gray-900">--%</span>
+<span id="riskLabel" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Waiting</span>
+</div>
+</div>
+<div class="w-full space-y-4">
+<div class="flex justify-between items-center text-sm">
+<span class="text-gray-500 font-medium">Apnea-Hypopnea Index (AHI)</span>
+<span id="ahiValue" class="text-brand font-bold">--</span>
+</div>
+<div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+<div class="bg-brand h-full w-[42%] rounded-full"></div>
+</div>
+<p class="text-[10px] text-gray-400 leading-relaxed">
+              <span id="aiRiskText">Waiting for live sensor data...</span>
+            </p>
+</div>
+</div>
+</div>
+<!-- END: Chart & Risk Level Section -->
+<!-- BEGIN: Table Section -->
+<section class="bg-white rounded-card shadow-sm border border-gray-100 overflow-hidden" data-purpose="activity-log">
+<div class="p-6 border-b border-gray-50 flex justify-between items-center">
+<h3 class="font-bold text-gray-900">Recent Sleep Episodes</h3>
+<a class="text-brand text-xs font-bold flex items-center gap-1" href="#">
+            View Full History
+            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</a>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+<th class="px-6 py-3">Time Range</th>
+<th class="px-6 py-3">Status</th>
+<th class="px-6 py-3">Avg SpO2</th><th class="px-6 py-3">Avg PPG</th><th class="px-6 py-3">GSR</th><th class="px-6 py-3">Heart Rate</th>
+<th class="px-6 py-3">Apnea Events</th>
+<th class="px-6 py-3">Duration</th>
+
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-50 text-sm">
+<tr class="hover:bg-gray-50 transition-colors">
+<td class="px-6 py-4 font-medium text-gray-700">Tonight, 01:24 AM</td>
+<td class="px-6 py-4">
+<span class="bg-green-100 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Normal</span>
+</td>
+<td class="px-6 py-4 text-gray-600 font-medium">98.2%</td><td class="px-6 py-4 text-gray-600 font-medium">95%</td><td class="px-6 py-4 text-gray-600 font-medium">Normal</td><td class="px-6 py-4 text-gray-600 font-medium">72 BPM</td>
+<td class="px-6 py-4 text-gray-600">0 events</td>
+<td class="px-6 py-4 text-gray-600">45m 12s</td>
+
+</tr>
+<!-- Sample row 2 -->
+<tr class="hover:bg-gray-50 transition-colors">
+<td class="px-6 py-4 font-medium text-gray-700">Jan 12, 11:45 PM</td>
+<td class="px-6 py-4">
+<span class="bg-yellow-100 text-yellow-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Mild</span>
+</td>
+<td class="px-6 py-4 text-gray-600 font-medium">94.5%</td><td class="px-6 py-4 text-gray-600 font-medium">92%</td><td class="px-6 py-4 text-gray-600 font-medium">Apnea</td><td class="px-6 py-4 text-gray-600 font-medium">68 BPM</td>
+<td class="px-6 py-4 text-gray-600">3 events</td>
+<td class="px-6 py-4 text-gray-600">6h 20m</td>
+
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- END: Table Section -->
+</div>
+</main>
+<!-- END: Main Content -->
+<!-- BEGIN: Live FastAPI + AI + Chart JavaScript -->
+<script>
+  // IMPORTANT:
+  // Use 127.0.0.1 when the website is opened on the same computer as FastAPI.
+  // If you open the website from another device, replace it with: http://172.20.10.10:8000/sensor-data
+  const API_URL = "http://127.0.0.1:8000/sensor-data";
+
+  let lastSensorData = null;
+  let ppgHistory = [];
+  let spo2History = [];
+  const MAX_POINTS = 80;
+
+  function safeSetText(id, value) {
+    const element = document.getElementById(id);
+    if (element) element.innerText = value;
+  }
+
+  function analyzeApneaRisk(last) {
+    let riskPercent = 10;
+    let label = "LOW RISK";
+    let text = "Current values are within an acceptable monitoring range.";
+
+    if (last.spo2 < 90 || last.apnea_detected === true) {
+      riskPercent = 85;
+      label = "HIGH RISK";
+      text = "Possible apnea-related oxygen desaturation detected. Check sensor placement and monitor the patient closely.";
+    } else if (last.spo2 < 94) {
+      riskPercent = 55;
+      label = "MODERATE RISK";
+      text = "SpO₂ is below the preferred range. This may indicate mild oxygen desaturation and should be monitored.";
+    } else {
+      riskPercent = 20;
+      label = "LOW RISK";
+    }
+
+    safeSetText("riskPercent", riskPercent + "%");
+    safeSetText("riskLabel", label);
+    safeSetText("ahiValue", (riskPercent / 10).toFixed(1));
+    safeSetText("aiRiskText", text);
+  }
+
+  // Function to call our apnea prediction API
+  async function predictApnea(hrv, signalSpo2) {
+    try {
+      const predictionResponse = await fetch("/api/v1/predict/apnea/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hrv_metrics: hrv,
+          signal_spo2: signalSpo2
+        })
+      });
+
+      if (!predictionResponse.ok) {
+        console.error("Prediction API error:", predictionResponse.status);
+        return null;
+      }
+
+      return await predictionResponse.json();
+    } catch (error) {
+      console.error("Prediction API call failed:", error);
+      return null;
+    }
+  }
+
+  // Updated risk analysis using our AI prediction
+  async function analyzeApneaRisk(last, predictionData) {
+    let riskPercent = 10;
+    let label = "LOW RISK";
+    let text = "Current values are within an acceptable monitoring range.";
+
+    if (predictionData) {
+      riskPercent = Math.round(predictionData.prob_fusion * 100);
+
+      if (predictionData.prob_fusion >= 0.5) {
+        label = "HIGH RISK";
+        text = `⚠️ ${predictionData.decision}\n\nHRV Probability: ${(predictionData.prob_hrv * 100).toFixed(1)}%\nSpO₂ Probability: ${(predictionData.prob_spo2 * 100).toFixed(1)}%\nFused Probability: ${riskPercent}%`;
+      } else if (predictionData.prob_fusion >= 0.3) {
+        label = "MODERATE RISK";
+        text = `Monitoring closely. ${predictionData.decision}\n\nHRV Probability: ${(predictionData.prob_hrv * 100).toFixed(1)}%\nSpO₂ Probability: ${(predictionData.prob_spo2 * 100).toFixed(1)}%`;
+      } else {
+        label = "LOW RISK";
+        text = `${predictionData.decision}\n\nHRV Probability: ${(predictionData.prob_hrv * 100).toFixed(1)}%\nSpO₂ Probability: ${(predictionData.prob_spo2 * 100).toFixed(1)}%`;
+      }
+    } else {
+      // Fallback simple analysis
+      if (last.spo2 < 90) {
+        riskPercent = 85;
+        label = "HIGH RISK";
+        text = "Possible apnea-related oxygen desaturation detected. Check sensor placement and monitor the patient closely.";
+      } else if (last.spo2 < 94) {
+        riskPercent = 55;
+        label = "MODERATE RISK";
+        text = "SpO₂ is below the preferred range. This may indicate mild oxygen desaturation and should be monitored.";
+      } else {
+        riskPercent = 20;
+        label = "LOW RISK";
+      }
+    }
+
+    safeSetText("riskPercent", riskPercent + "%");
+    safeSetText("riskLabel", label);
+    safeSetText("ahiValue", (riskPercent / 10).toFixed(1));
+    safeSetText("aiRiskText", text);
+
+    // Update the circular progress bar
+    const circle = document.querySelector("circle[stroke='#1d61e1']");
+    if (circle) {
+      const circumference = 2 * Math.PI * 80;
+      const offset = circumference - (riskPercent / 100) * circumference;
+      circle.style.strokeDashoffset = offset;
+    }
+  }
+
+  async function updateDashboard() {
+    try {
+      // For now, since we don't have the FastAPI sensor-data endpoint, let's use dummy data
+      // so we can test our AI prediction API!
+      const dummyData = getDummySensorData();
+      const last = dummyData.sensor_data[dummyData.sensor_data.length - 1];
+      const hrv = dummyData.hrv_metrics;
+      const signalSpo2 = dummyData.signal_spo2;
+      lastSensorData = last;
+
+      safeSetText("spo2", Number(last.spo2).toFixed(0));
+      safeSetText("bpm", last.heart_rate);
+      safeSetText("gsr", last.gsr);
+      safeSetText("ppg", last.ppg);
+
+      safeSetText("hrv_sampen", hrv.HRV_SampEn ?? "--");
+      safeSetText("hrv_rmssd", hrv.HRV_RMSSD ?? "--");
+      safeSetText("hrv_sdnn", hrv.HRV_SDNN ?? "--");
+      safeSetText("ppg_mean", hrv.PPG_Rate_Mean ?? "--");
+      safeSetText("hr_mean", hrv.HR_mean ?? "--");
+      safeSetText("hr_std", hrv.HR_std ?? "--");
+      safeSetText("hr_max", hrv.HR_max ?? "--");
+      safeSetText("hr_min", hrv.HR_min ?? "--");
+
+      ppgHistory.push(Number(last.ppg));
+      spo2History.push(Number(last.spo2));
+
+      if (ppgHistory.length > MAX_POINTS) ppgHistory.shift();
+      if (spo2History.length > MAX_POINTS) spo2History.shift();
+
+      // Call our AI prediction API
+      const prediction = await predictApnea(hrv, signalSpo2);
+      await analyzeApneaRisk(last, prediction);
+      drawLiveChart();
+    } catch (error) {
+      console.error("Dashboard error:", error);
+    }
+  }
+
+  // Generate dummy data to test our AI prediction API
+  function getDummySensorData() {
+    const mode = Math.random() > 0.5 ? "apnea" : "normal";
+
+    let hrv_metrics, signal_spo2;
+
+    if (mode === "apnea") {
+      hrv_metrics = {
+        HRV_SampEn: 0.85,
+        HRV_RMSSD: 18.2,
+        HRV_SDNN: 65.4,
+        PPG_Rate_Mean: 78.0,
+        HR_mean: 76.5,
+        HR_std: 12.4,
+        HR_max: 105.0,
+        HR_min: 48.0
+      };
+
+      // Generate 88-point SpO2 signal with desaturation
+      const temps = Array.from({length: 88}, (_, i) => i / 88);
+      signal_spo2 = temps.map(t => {
+        const base = 0.98 - 0.16 * Math.exp(-Math.pow((t - 0.5) / 0.15, 2));
+        const noise = (Math.random() - 0.5) * 0.006;
+        return base + noise;
+      });
+    } else {
+      hrv_metrics = {
+        HRV_SampEn: 1.45,
+        HRV_RMSSD: 42.5,
+        HRV_SDNN: 35.2,
+        PPG_Rate_Mean: 65.0,
+        HR_mean: 65.5,
+        HR_std: 2.1,
+        HR_max: 72.0,
+        HR_min: 60.0
+      };
+
+      // Generate 88-point normal SpO2 signal
+      signal_spo2 = Array.from({length: 88}, () => 0.97 + (Math.random() - 0.5) * 0.02);
+    }
+
+    return {
+      sensor_data: [
+        {
+          spo2: mode === "apnea" ? 88 : 98,
+          heart_rate: mode === "apnea" ? 85 : 68,
+          gsr: mode === "apnea" ? "Apnea" : "Normal",
+          ppg: 75000 + Math.random() * 10000
+        }
+      ],
+      hrv_metrics,
+      signal_spo2
+    };
+  }
+
+  function drawLiveChart() {
+    const canvas = document.getElementById("ppgChart");
+    const container = document.getElementById("signal-canvas-wrapper");
+    if (!canvas || !container) return;
+
+    const ctx = canvas.getContext("2d");
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    ctx.strokeStyle = "#f1f5f9";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 5; i++) {
+      const y = (h / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+
+    drawLine(ctx, ppgHistory, "#1d61e1", w, h, 0.65);
+    drawLine(ctx, spo2History, "#14b8a6", w, h, 0.35, 80, 100);
+
+    ctx.font = "bold 10px Plus Jakarta Sans";
+    ctx.fillStyle = "#1d61e1";
+    ctx.fillText("PPG Signal", 10, 20);
+    ctx.fillStyle = "#14b8a6";
+    ctx.fillText("SpO₂ Level", 10, 35);
+  }
+
+  function drawLine(ctx, values, color, w, h, verticalPosition, fixedMin = null, fixedMax = null) {
+    if (values.length < 2) return;
+
+    const min = fixedMin !== null ? fixedMin : Math.min(...values);
+    const max = fixedMax !== null ? fixedMax : Math.max(...values);
+    const range = max - min || 1;
+    const step = w / (MAX_POINTS - 1);
+
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+
+    values.forEach((value, index) => {
+      const x = index * step;
+      const normalized = (value - min) / range;
+      const amplitude = h * 0.22;
+      const y = h * verticalPosition - (normalized - 0.5) * amplitude;
+
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+
+  function openSpo2AI() {
+    if (!lastSensorData) {
+      alert("No sensor data available yet.");
+      return;
+    }
+
+    const spo2 = Number(lastSensorData.spo2);
+    const bpm = lastSensorData.heart_rate;
+    const gsr = lastSensorData.gsr;
+
+    let interpretation = "SpO₂ is within the expected range for this monitoring moment.";
+    if (spo2 < 90) {
+      interpretation = "SpO₂ is critically low. This may indicate a possible oxygen desaturation/apnea event. Verify sensor placement and continue monitoring.";
+    } else if (spo2 < 94) {
+      interpretation = "SpO₂ is lower than preferred. This may represent mild oxygen desaturation and should be followed over time.";
+    }
+
+    safeSetText(
+      "aiSpo2Content",
+      `SpO₂: ${spo2}%\nHeart Rate: ${bpm} BPM\nGSR: ${gsr}\n\nAI Interpretation:\n${interpretation}\n\nNote: This is a monitoring aid, not a medical diagnosis.`
+    );
+
+    openModal("spo2Modal");
+  }
+
+  function openPpgAI() {
+    if (!lastSensorData) {
+      alert("No sensor data available yet.");
+      return;
+    }
+
+    const ppg = Number(lastSensorData.ppg);
+    const spo2 = Number(lastSensorData.spo2);
+    const bpm = lastSensorData.heart_rate;
+
+    let interpretation = "The PPG signal is being detected and can support pulse and oxygen monitoring.";
+    if (ppg < 50000) {
+      interpretation = "The PPG signal is weak. This often happens when the finger is not correctly placed, the sensor is exposed to external light, or contact pressure is unstable.";
+    }
+
+    safeSetText(
+      "aiPpgContent",
+      `PPG: ${ppg}\nSpO₂: ${spo2}%\nHeart Rate: ${bpm} BPM\n\nAI Interpretation:\n${interpretation}\n\nNote: PPG quality affects BPM and SpO₂ reliability.`
+    );
+
+    openModal("ppgModal");
+  }
+
+  function openModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+  }
+
+  function closeModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+  }
+
+  window.addEventListener("load", () => {
+    updateDashboard();
+    setInterval(updateDashboard, 2000);
+    window.addEventListener("resize", drawLiveChart);
+  });
+</script>
+<!-- END: Live FastAPI + AI + Chart JavaScript -->
+
+
+
+
+</body></html>

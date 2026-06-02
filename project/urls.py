@@ -17,6 +17,7 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path , include
+from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
 urlpatterns = [
@@ -25,4 +26,9 @@ urlpatterns = [
     path('api/patient/',      include('patient.urls')),
     path('api/statistique/',  include('statistique.urls')),
     path('api/v1/', include('apnea_analysis.urls')),
+    path('', TemplateView.as_view(template_name='login.html'), name='login'),
+    path('dashboard/', TemplateView.as_view(template_name='dashboard.html'), name='dashboard'),
+    path('sleep-history/', TemplateView.as_view(template_name='sleep_history.html'), name='sleep-history'),
+    path('patient-profile/', TemplateView.as_view(template_name='patient_profile.html'), name='patient-profile'),
+    path('settings/', TemplateView.as_view(template_name='settings.html'), name='settings'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
