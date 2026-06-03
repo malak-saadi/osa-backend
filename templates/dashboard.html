@@ -281,12 +281,26 @@
 </div>
 </div>
 <div class="w-full space-y-4">
+<div class="grid grid-cols-3 gap-2 text-center">
+<div class="bg-blue-50 rounded-lg p-2">
+<p class="text-[10px] text-blue-600 font-bold uppercase">HRV (20%)</p>
+<p id="hrvPercent" class="text-xl font-bold text-blue-800">--%</p>
+</div>
+<div class="bg-teal-50 rounded-lg p-2">
+<p class="text-[10px] text-teal-600 font-bold uppercase">SpO2 (80%)</p>
+<p id="spo2Percent" class="text-xl font-bold text-teal-800">--%</p>
+</div>
+<div class="bg-indigo-50 rounded-lg p-2">
+<p class="text-[10px] text-indigo-600 font-bold uppercase">Fused</p>
+<p id="fusedPercent" class="text-xl font-bold text-indigo-800">--%</p>
+</div>
+</div>
 <div class="flex justify-between items-center text-sm">
 <span class="text-gray-500 font-medium">Apnea-Hypopnea Index (AHI)</span>
 <span id="ahiValue" class="text-brand font-bold">--</span>
 </div>
 <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-<div class="bg-brand h-full w-[42%] rounded-full"></div>
+<div id="progressBar" class="bg-brand h-full w-[0%] rounded-full transition-all duration-500"></div>
 </div>
 <p class="text-[10px] text-gray-400 leading-relaxed">
               <span id="aiRiskText">Waiting for live sensor data...</span>
@@ -351,40 +365,17 @@
   // IMPORTANT:
   // Use 127.0.0.1 when the website is opened on the same computer as FastAPI.
   // If you open the website from another device, replace it with: http://172.20.10.10:8000/sensor-data
-  const API_URL = "http://127.0.0.1:8000/sensor-data";
+  const SENSOR_API_URL = "https://preserve-illustrations-head-numerous.trycloudflare.com/sensor-data";
 
   let lastSensorData = null;
   let ppgHistory = [];
   let spo2History = [];
+  let aiSpO2History = []; // Accumulate SpO2 for AI model (needs 88 points)
   const MAX_POINTS = 80;
 
   function safeSetText(id, value) {
     const element = document.getElementById(id);
     if (element) element.innerText = value;
-  }
-
-  function analyzeApneaRisk(last) {
-    let riskPercent = 10;
-    let label = "LOW RISK";
-    let text = "Current values are within an acceptable monitoring range.";
-
-    if (last.spo2 < 90 || last.apnea_detected === true) {
-      riskPercent = 85;
-      label = "HIGH RISK";
-      text = "Possible apnea-related oxygen desaturation detected. Check sensor placement and monitor the patient closely.";
-    } else if (last.spo2 < 94) {
-      riskPercent = 55;
-      label = "MODERATE RISK";
-      text = "SpO₂ is below the preferred range. This may indicate mild oxygen desaturation and should be monitored.";
-    } else {
-      riskPercent = 20;
-      label = "LOW RISK";
-    }
-
-    safeSetText("riskPercent", riskPercent + "%");
-    safeSetText("riskLabel", label);
-    safeSetText("ahiValue", (riskPercent / 10).toFixed(1));
-    safeSetText("aiRiskText", text);
   }
 
   // Function to call our apnea prediction API
@@ -419,18 +410,28 @@
 
     if (predictionData) {
       riskPercent = Math.round(predictionData.prob_fusion * 100);
+      const hrvPct = Math.round(predictionData.prob_hrv * 100);
+      const spo2Pct = Math.round(predictionData.prob_spo2 * 100);
+
+      safeSetText("hrvPercent", hrvPct + "%");
+      safeSetText("spo2Percent", spo2Pct + "%");
+      safeSetText("fusedPercent", riskPercent + "%");
 
       if (predictionData.prob_fusion >= 0.5) {
         label = "HIGH RISK";
-        text = `⚠️ ${predictionData.decision}\n\nHRV Probability: ${(predictionData.prob_hrv * 100).toFixed(1)}%\nSpO₂ Probability: ${(predictionData.prob_spo2 * 100).toFixed(1)}%\nFused Probability: ${riskPercent}%`;
+        text = `⚠️ ${predictionData.decision}`;
       } else if (predictionData.prob_fusion >= 0.3) {
         label = "MODERATE RISK";
-        text = `Monitoring closely. ${predictionData.decision}\n\nHRV Probability: ${(predictionData.prob_hrv * 100).toFixed(1)}%\nSpO₂ Probability: ${(predictionData.prob_spo2 * 100).toFixed(1)}%`;
+        text = `Monitoring closely. ${predictionData.decision}`;
       } else {
         label = "LOW RISK";
-        text = `${predictionData.decision}\n\nHRV Probability: ${(predictionData.prob_hrv * 100).toFixed(1)}%\nSpO₂ Probability: ${(predictionData.prob_spo2 * 100).toFixed(1)}%`;
+        text = `${predictionData.decision}`;
       }
     } else {
+      safeSetText("hrvPercent", "--%");
+      safeSetText("spo2Percent", "--%");
+      safeSetText("fusedPercent", "--%");
+
       // Fallback simple analysis
       if (last.spo2 < 90) {
         riskPercent = 85;
@@ -451,6 +452,12 @@
     safeSetText("ahiValue", (riskPercent / 10).toFixed(1));
     safeSetText("aiRiskText", text);
 
+    // Update the linear progress bar
+    const progressBar = document.getElementById("progressBar");
+    if (progressBar) {
+      progressBar.style.width = riskPercent + "%";
+    }
+
     // Update the circular progress bar
     const circle = document.querySelector("circle[stroke='#1d61e1']");
     if (circle) {
@@ -460,14 +467,23 @@
     }
   }
 
+
   async function updateDashboard() {
     try {
-      // For now, since we don't have the FastAPI sensor-data endpoint, let's use dummy data
-      // so we can test our AI prediction API!
-      const dummyData = getDummySensorData();
-      const last = dummyData.sensor_data[dummyData.sensor_data.length - 1];
-      const hrv = dummyData.hrv_metrics;
-      const signalSpo2 = dummyData.signal_spo2;
+      // Only use real IoT API data
+      const response = await fetch(SENSOR_API_URL);
+      const data = await response.json();
+
+      const sensorData = data.sensor_data || [];
+
+      if (!Array.isArray(sensorData) || sensorData.length === 0) {
+        console.log("No sensor data yet");
+        return;
+      }
+
+      const last = sensorData[sensorData.length - 1];
+      const hrv = data.hrv_metrics || {};
+      const signalSpo2 = data.signal_spo2 || [];
       lastSensorData = last;
 
       safeSetText("spo2", Number(last.spo2).toFixed(0));
@@ -490,68 +506,34 @@
       if (ppgHistory.length > MAX_POINTS) ppgHistory.shift();
       if (spo2History.length > MAX_POINTS) spo2History.shift();
 
-      // Call our AI prediction API
-      const prediction = await predictApnea(hrv, signalSpo2);
+      // Accumulate SpO2 points for AI model
+      if (signalSpo2.length > 0) {
+        aiSpO2History = aiSpO2History.concat(signalSpo2);
+        // Keep only the last 88 points
+        if (aiSpO2History.length > 88) {
+          aiSpO2History = aiSpO2History.slice(-88);
+        }
+      }
+
+      // Process data for our AI model
+      let prediction = null;
+      console.log("HRV keys length:", Object.keys(hrv).length);
+      console.log("AI SpO2 history length:", aiSpO2History.length);
+
+      if (Object.keys(hrv).length === 8 && aiSpO2History.length >= 88) {
+        // Take LAST 88 elements and convert from % (0-100) to 0-1 range
+        const processedSpo2 = aiSpO2History.slice(-88).map(val => val / 100.0);
+        console.log("Processed SpO2 length:", processedSpo2.length);
+        console.log("Calling prediction API with data:", {hrv, processedSpo2});
+        prediction = await predictApnea(hrv, processedSpo2);
+        console.log("Prediction result:", prediction);
+      }
+
       await analyzeApneaRisk(last, prediction);
       drawLiveChart();
     } catch (error) {
       console.error("Dashboard error:", error);
     }
-  }
-
-  // Generate dummy data to test our AI prediction API
-  function getDummySensorData() {
-    const mode = Math.random() > 0.5 ? "apnea" : "normal";
-
-    let hrv_metrics, signal_spo2;
-
-    if (mode === "apnea") {
-      hrv_metrics = {
-        HRV_SampEn: 0.85,
-        HRV_RMSSD: 18.2,
-        HRV_SDNN: 65.4,
-        PPG_Rate_Mean: 78.0,
-        HR_mean: 76.5,
-        HR_std: 12.4,
-        HR_max: 105.0,
-        HR_min: 48.0
-      };
-
-      // Generate 88-point SpO2 signal with desaturation
-      const temps = Array.from({length: 88}, (_, i) => i / 88);
-      signal_spo2 = temps.map(t => {
-        const base = 0.98 - 0.16 * Math.exp(-Math.pow((t - 0.5) / 0.15, 2));
-        const noise = (Math.random() - 0.5) * 0.006;
-        return base + noise;
-      });
-    } else {
-      hrv_metrics = {
-        HRV_SampEn: 1.45,
-        HRV_RMSSD: 42.5,
-        HRV_SDNN: 35.2,
-        PPG_Rate_Mean: 65.0,
-        HR_mean: 65.5,
-        HR_std: 2.1,
-        HR_max: 72.0,
-        HR_min: 60.0
-      };
-
-      // Generate 88-point normal SpO2 signal
-      signal_spo2 = Array.from({length: 88}, () => 0.97 + (Math.random() - 0.5) * 0.02);
-    }
-
-    return {
-      sensor_data: [
-        {
-          spo2: mode === "apnea" ? 88 : 98,
-          heart_rate: mode === "apnea" ? 85 : 68,
-          gsr: mode === "apnea" ? "Apnea" : "Normal",
-          ppg: 75000 + Math.random() * 10000
-        }
-      ],
-      hrv_metrics,
-      signal_spo2
-    };
   }
 
   function drawLiveChart() {

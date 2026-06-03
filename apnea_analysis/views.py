@@ -52,7 +52,7 @@ class PredictApneaView(APIView):
             )
 
             # Compute fused probability
-            poids_hrv, poids_spo2 = 0.8, 0.2
+            poids_hrv, poids_spo2 = 0.2, 0.8
             prob_fusion = (prob_hrv * poids_hrv) + (prob_spo2 * poids_spo2)
 
             # Make decision
